@@ -1,11 +1,52 @@
 import { useState, useCallback, useEffect } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { WebSocketMessage, ConnectionStatus, WebSocketState } from '../types/websocket';
+import { useAuth, useUser } from '@clerk/nextjs';
 
-// const SOCKET_URL = "wss://balanzas-backend-develop-391235381605.us-central1.run.app/websocket/test";
-const SOCKET_URL = "ws://localhost:8080/websocket/test";
+const SOCKET_URL = "wss://balanzas-backend-develop-391235381605.us-central1.run.app/websocket/balanza-uno";
+// const SOCKET_URL = "ws://localhost:8080/websocket/test";
 
 export const useWebSocketConnection = () => {
+  const { getToken, isSignedIn } = useAuth();
+  const { user } = useUser();
+  const [socketUrl, setSocketUrl] = useState<string | null>(null);
+
+  // Función para obtener la URL con el token
+  const getSocketUrl = useCallback(async () => {
+    if (!isSignedIn || !user) {
+      console.error('❌ Usuario no autenticado');
+      return null;
+    }
+
+    try {
+      const token = await getToken();
+      if (!token) {
+        console.error('❌ No se pudo obtener el token JWT');
+        return null;
+      }
+
+      // Usar el token como subprotocolo
+      return `${SOCKET_URL}?protocol=${token}`;
+    } catch (error) {
+      console.error('❌ Error al obtener el token:', error);
+      return null;
+    }
+  }, [getToken, isSignedIn, user]);
+
+  // Actualizar la URL cuando cambie el token o el estado de autenticación
+  useEffect(() => {
+    if (isSignedIn) {
+      getSocketUrl().then(url => {
+        if (url) {
+          console.log('🔗 URL del WebSocket con token:', url);
+          setSocketUrl(url);
+        }
+      });
+    } else {
+      setSocketUrl(null);
+    }
+  }, [getSocketUrl, isSignedIn]);
+
   const [state, setState] = useState<WebSocketState>({
     lastMessage: null,
     connectionStatus: {
@@ -17,25 +58,29 @@ export const useWebSocketConnection = () => {
   });
 
   const { sendMessage, lastMessage, readyState, getWebSocket } = useWebSocket(
-    state.connectionStatus.isConnected ? SOCKET_URL : null,
+    socketUrl,
     {
       shouldReconnect: (closeEvent) => {
         console.log('🔄 Intento de reconexión:', {
           code: closeEvent.code,
           reason: closeEvent.reason,
           wasClean: closeEvent.wasClean,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          isSignedIn,
+          userId: user?.id
         });
-        return true;
+        return Boolean(isSignedIn);
       },
       reconnectAttempts: 10,
       reconnectInterval: 3000,
       onOpen: () => {
         const ws = getWebSocket();
         console.log('🟢 Conexión WebSocket establecida:', {
-          url: SOCKET_URL,
+          url: socketUrl,
           readyState,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          userId: user?.id,
+          isSignedIn
         });
         setState(prev => ({
           ...prev,
@@ -51,7 +96,9 @@ export const useWebSocketConnection = () => {
           code: event.code,
           reason: event.reason,
           wasClean: event.wasClean,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          userId: user?.id,
+          isSignedIn
         });
         setState(prev => ({
           ...prev,
@@ -67,7 +114,9 @@ export const useWebSocketConnection = () => {
           readyState,
           timestamp: new Date().toISOString(),
           connectionTime: state.connectionStatus.connectionTime?.toISOString(),
-          lastMessage: state.lastMessage
+          lastMessage: state.lastMessage,
+          userId: user?.id,
+          isSignedIn
         });
         setState(prev => ({
           ...prev,
@@ -115,22 +164,30 @@ export const useWebSocketConnection = () => {
   }, []);
 
   const sendTestMessage = useCallback(() => {
+    if (!isSignedIn || !user) {
+      console.error('❌ No se puede enviar mensaje: usuario no autenticado');
+      return;
+    }
+
     const testMessage = {
       type: "ping",
       timestamp: new Date().toISOString(),
       clientInfo: {
         readyState,
         connectionTime: state.connectionStatus.connectionTime?.toISOString(),
-        lastError: state.connectionStatus.error
+        lastError: state.connectionStatus.error,
+        userId: user.id
       }
     };
     sendMessage(JSON.stringify(testMessage));
-  }, [sendMessage, readyState, state.connectionStatus]);
+  }, [sendMessage, readyState, state.connectionStatus, isSignedIn, user]);
 
   return {
     ...state,
     readyState,
     toggleConnection,
-    sendTestMessage
+    sendTestMessage,
+    isSignedIn,
+    userId: user?.id
   };
 }; 

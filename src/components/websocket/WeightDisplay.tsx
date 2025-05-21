@@ -20,7 +20,7 @@ export const WeightDisplay = ({ lastMessage }: WeightDisplayProps) => {
       
       {peso ? (
         <div className="text-center">
-          <div className="text-5xl font-bold text-blue-700 my-6">
+          <div className="text-5xl font-bold text-blue-100 my-6">
             {peso} <span className="text-2xl text-gray-500">{unidad}</span>
           </div>
           
