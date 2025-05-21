@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
-import { WebSocketMessage, ConnectionStatus, WebSocketState } from '../types/websocket';
+import { WebSocketState } from '../types/websocket';
 import { useAuth, useUser } from '@clerk/nextjs';
 
 const SOCKET_URL = "wss://balanzas-backend-develop-391235381605.us-central1.run.app/websocket/balanza-uno";
@@ -75,6 +75,7 @@ export const useWebSocketConnection = () => {
       reconnectInterval: 3000,
       onOpen: () => {
         const ws = getWebSocket();
+        console.log({ws})
         console.log('🟢 Conexión WebSocket establecida:', {
           url: socketUrl,
           readyState,

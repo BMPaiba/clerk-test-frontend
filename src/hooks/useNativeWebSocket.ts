@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
-import { WebSocketMessage, ConnectionStatus, WebSocketState } from '../types/websocket';
+import { WebSocketState } from '../types/websocket';
 
 const SOCKET_URL = "wss://balanzas-backend-develop-391235381605.us-central1.run.app/websocket/test";
 // const SOCKET_URL = "ws://localhost:8080/websocket/test";
@@ -9,8 +9,8 @@ export const useNativeWebSocket = () => {
   const { getToken, isSignedIn } = useAuth();
   const { user } = useUser();
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
-  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptsRef = useRef<number>(0);
   const MAX_RECONNECT_ATTEMPTS = 10;
   const RECONNECT_INTERVAL = 3000;
 

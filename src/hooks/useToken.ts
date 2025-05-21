@@ -41,7 +41,7 @@ export const useToken = () => {
       setState(prev => ({ ...prev, copied: true }));
       setTimeout(() => setState(prev => ({ ...prev, copied: false })), 2000);
     } catch (err) {
-      setState(prev => ({ ...prev, error: 'Error al copiar al portapapeles' }));
+      setState(prev => ({ ...prev, error: 'Error al copiar al portapapeles', err }));
     }
   }, [state.token]);
 

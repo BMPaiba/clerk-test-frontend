@@ -26,11 +26,11 @@ export default function App() {
             isSignedIn ? (
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <img 
+                  {/* <img 
                     src={user?.imageUrl} 
                     alt="Avatar" 
                     className="w-8 h-8 rounded-full"
-                  />
+                  /> */}
                   <span className="text-sm">{user?.fullName || user?.username}</span>
                 </div>
                 <SignOutButton>
