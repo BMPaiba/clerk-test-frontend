@@ -4,7 +4,7 @@ import { WebSocketState } from '../types/websocket';
 import { useAuth, useUser } from '@clerk/nextjs';
 
 const SOCKET_URL = "wss://balanzas-backend-develop-391235381605.us-central1.run.app/websocket/balanza-uno";
-// const SOCKET_URL = "ws://localhost:8080/websocket/test";
+// const SOCKET_URL = "ws://localhost:8080/websocket/balanza-uno";
 
 export const useWebSocketConnection = () => {
   const { getToken, isSignedIn } = useAuth();
