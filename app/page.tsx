@@ -14,7 +14,8 @@ export default function App() {
     connectionStatus,
     readyState,
     toggleConnection,
-    sendTestMessage
+    sendTestMessage,
+    tokenType
   } = useWebSocketConnection();
 
   return (
@@ -49,6 +50,30 @@ export default function App() {
           )}
         </div>
       </div>
+      
+      {/* Información del tipo de token */}
+      {isSignedIn && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="font-semibold text-blue-800">Tipo de Token: </span>
+              <span className={`px-2 py-1 rounded text-sm ${
+                tokenType === 'fijo' 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-yellow-100 text-yellow-800'
+              }`}>
+                {tokenType === 'fijo' ? '🔒 Fijo (Desarrollo)' : '🔄 Dinámico (Clerk)'}
+              </span>
+            </div>
+            <div className="text-xs text-blue-600">
+              {tokenType === 'fijo' 
+                ? 'Token estático para pruebas' 
+                : 'Token renovado automáticamente'
+              }
+            </div>
+          </div>
+        </div>
+      )}
       
       <ConnectionStatus
         readyState={readyState}

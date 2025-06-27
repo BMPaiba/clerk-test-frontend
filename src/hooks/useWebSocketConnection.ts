@@ -2,14 +2,18 @@ import { useState, useCallback, useEffect } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { WebSocketState } from '../types/websocket';
 import { useAuth, useUser } from '@clerk/nextjs';
+import { TOKEN_CONFIG, getTokenConfig, getWebSocketUrl } from '../config/tokens';
 
-const SOCKET_URL = "wss://balanzas-backend-develop-391235381605.us-central1.run.app/websocket/balanza-uno";
-// const SOCKET_URL = "ws://localhost:8080/websocket/balanza-uno";
+// Obtener la URL de WebSocket según el entorno
+const SOCKET_URL = getWebSocketUrl(false); // false = desarrollo, true = producción
 
 export const useWebSocketConnection = () => {
   const { getToken, isSignedIn } = useAuth();
   const { user } = useUser();
   const [socketUrl, setSocketUrl] = useState<string | null>(null);
+
+  // Obtener configuración del token
+  const tokenConfig = getTokenConfig();
 
   // Función para obtener la URL con el token
   const getSocketUrl = useCallback(async () => {
@@ -19,33 +23,44 @@ export const useWebSocketConnection = () => {
     }
 
     try {
-      const token = await getToken();
-      if (!token) {
-        console.error('❌ No se pudo obtener el token JWT');
-        return null;
-      }
+      let tokenToUse: string;
 
+      if (tokenConfig.useFixedToken) {
+        // Usar token fijo
+        console.log('🔑 Usando token fijo para WebSocket');
+        tokenToUse = tokenConfig.fixedToken;
+      } else {
+        // Usar token dinámico de Clerk
+        console.log('🔑 Obteniendo token dinámico de Clerk');
+        const dynamicToken = await getToken();
+        if (!dynamicToken) {
+          console.error('❌ No se pudo obtener el token JWT de Clerk');
+          return null;
+        }
+        tokenToUse = dynamicToken;
+      }
+      
       // Usar el token como subprotocolo
-      return `${SOCKET_URL}?protocol=${token}`;
+      return `${SOCKET_URL}?protocol=${tokenToUse}`;
     } catch (error) {
       console.error('❌ Error al obtener el token:', error);
       return null;
     }
-  }, [getToken, isSignedIn, user]);
+  }, [getToken, isSignedIn, user, tokenConfig]);
 
   // Actualizar la URL cuando cambie el token o el estado de autenticación
   useEffect(() => {
     if (isSignedIn) {
       getSocketUrl().then(url => {
         if (url) {
-          console.log('🔗 URL del WebSocket con token:', url);
+          console.log(`🔗 URL del WebSocket con token ${tokenConfig.tokenType}:`, url);
           setSocketUrl(url);
         }
       });
     } else {
       setSocketUrl(null);
     }
-  }, [getSocketUrl, isSignedIn]);
+  }, [getSocketUrl, isSignedIn, tokenConfig.tokenType]);
 
   const [state, setState] = useState<WebSocketState>({
     lastMessage: null,
@@ -67,12 +82,13 @@ export const useWebSocketConnection = () => {
           wasClean: closeEvent.wasClean,
           timestamp: new Date().toISOString(),
           isSignedIn,
-          userId: user?.id
+          userId: user?.id,
+          tokenType: tokenConfig.tokenType
         });
         return Boolean(isSignedIn);
       },
-      reconnectAttempts: 10,
-      reconnectInterval: 3000,
+      reconnectAttempts: TOKEN_CONFIG.RECONNECTION.MAX_ATTEMPTS,
+      reconnectInterval: TOKEN_CONFIG.RECONNECTION.INTERVAL,
       onOpen: () => {
         const ws = getWebSocket();
         console.log({ws})
@@ -81,7 +97,8 @@ export const useWebSocketConnection = () => {
           readyState,
           timestamp: new Date().toISOString(),
           userId: user?.id,
-          isSignedIn
+          isSignedIn,
+          tokenType: tokenConfig.tokenType
         });
         setState(prev => ({
           ...prev,
@@ -99,7 +116,8 @@ export const useWebSocketConnection = () => {
           wasClean: event.wasClean,
           timestamp: new Date().toISOString(),
           userId: user?.id,
-          isSignedIn
+          isSignedIn,
+          tokenType: tokenConfig.tokenType
         });
         setState(prev => ({
           ...prev,
@@ -117,7 +135,8 @@ export const useWebSocketConnection = () => {
           connectionTime: state.connectionStatus.connectionTime?.toISOString(),
           lastMessage: state.lastMessage,
           userId: user?.id,
-          isSignedIn
+          isSignedIn,
+          tokenType: tokenConfig.tokenType
         });
         setState(prev => ({
           ...prev,
@@ -177,11 +196,12 @@ export const useWebSocketConnection = () => {
         readyState,
         connectionTime: state.connectionStatus.connectionTime?.toISOString(),
         lastError: state.connectionStatus.error,
-        userId: user.id
+        userId: user.id,
+        tokenType: tokenConfig.tokenType
       }
     };
     sendMessage(JSON.stringify(testMessage));
-  }, [sendMessage, readyState, state.connectionStatus, isSignedIn, user]);
+  }, [sendMessage, readyState, state.connectionStatus, isSignedIn, user, tokenConfig.tokenType]);
 
   return {
     ...state,
@@ -189,6 +209,7 @@ export const useWebSocketConnection = () => {
     toggleConnection,
     sendTestMessage,
     isSignedIn,
-    userId: user?.id
+    userId: user?.id,
+    tokenType: tokenConfig.tokenType
   };
 }; 
