@@ -29,7 +29,7 @@ export const getTokenConfig = () => {
 };
 
 // Función para obtener la URL de WebSocket según el entorno
-export const getWebSocketUrl = (useProduction = false) => {
+export const getWebSocketUrl = (useProduction = true) => {
   return useProduction 
     ? TOKEN_CONFIG.WEBSOCKET_URLS.PRODUCTION 
     : TOKEN_CONFIG.WEBSOCKET_URLS.DEVELOPMENT;
