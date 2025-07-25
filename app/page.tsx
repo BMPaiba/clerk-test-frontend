@@ -20,11 +20,6 @@ export default function App() {
   } = useWebSocketConnection();
   const {
     lastMessage: lastMessageDos,
-    connectionStatus: connectionStatusDos,
-    readyState: readyStateDos,
-    toggleConnection: toggleConnectionDos,
-    sendTestMessage: sendTestMessageDos,
-    tokenType: tokenTypeDos
   } = useWebSocketConnectionDos();
 
   return (
