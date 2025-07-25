@@ -5,10 +5,11 @@ import { useAuth, useUser } from '@clerk/nextjs';
 import { TOKEN_CONFIG, getTokenConfig, getWebSocketUrl } from '../config/tokens';
 
 // Obtener la URL de WebSocket según el entorno
-const SOCKET_URL = getWebSocketUrl('balanza-uno'); // false = desarrollo, true = producción
+const SOCKET_URL = getWebSocketUrl('balanza-dos'); // false = desarrollo, true = producción
 
 
-export const useWebSocketConnection = () => {
+export const useWebSocketConnectionDos = () => {
+
   console.log({SOCKET_URL})
   const { getToken, isSignedIn } = useAuth();
   const { user } = useUser();

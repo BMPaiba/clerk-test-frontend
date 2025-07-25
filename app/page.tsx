@@ -5,6 +5,7 @@ import { useWebSocketConnection } from "@/src/hooks/useWebSocketConnection";
 import { ConnectionStatus } from "@/src/components/websocket/ConnectionStatus";
 import { WeightDisplay } from "@/src/components/websocket/WeightDisplay";
 import { RawDataDisplay } from "@/src/components/websocket/RawDataDisplay";
+import { useWebSocketConnectionDos } from "@/src/hooks/useWebSocketConnectionDos";
 
 export default function App() {
   const { isLoaded, isSignedIn } = useAuth();
@@ -17,6 +18,14 @@ export default function App() {
     sendTestMessage,
     tokenType
   } = useWebSocketConnection();
+  const {
+    lastMessage: lastMessageDos,
+    connectionStatus: connectionStatusDos,
+    readyState: readyStateDos,
+    toggleConnection: toggleConnectionDos,
+    sendTestMessage: sendTestMessageDos,
+    tokenType: tokenTypeDos
+  } = useWebSocketConnectionDos();
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
@@ -89,12 +98,23 @@ export default function App() {
         </div>
       )}
 
-      <div className="mt-6">
-        <WeightDisplay lastMessage={lastMessage} />
-        <RawDataDisplay 
-          lastMessage={lastMessage}
-          rawMessage={lastMessage ? JSON.stringify(lastMessage.data) : null}
-        />
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Balanza Uno</h3>
+          <WeightDisplay lastMessage={lastMessage} />
+          <RawDataDisplay 
+            lastMessage={lastMessage}
+            rawMessage={lastMessage ? JSON.stringify(lastMessage.data) : null}
+          />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Balanza Dos</h3>
+          <WeightDisplay lastMessage={lastMessageDos} />
+          <RawDataDisplay 
+            lastMessage={lastMessageDos}
+            rawMessage={lastMessageDos ? JSON.stringify(lastMessageDos.data) : null}
+          />
+        </div>
       </div>
     </div>
   );
