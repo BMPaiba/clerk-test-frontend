@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { TokenState } from '../types/user';
+import { getTokenExpirationTime, formatTimeRemaining } from '../utils/formatUtils';
 
 export const useToken = () => {
   const { getToken } = useAuth();
@@ -12,6 +13,14 @@ export const useToken = () => {
     copied: false
   });
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<string | null>(null);
+
+  const updateTimeRemaining = useCallback((token: string) => {
+    const remaining = getTokenExpirationTime(token);
+    if (remaining !== null) {
+      setTimeRemaining(formatTimeRemaining(remaining));
+    }
+  }, []);
 
   const fetchToken = useCallback(async () => {
     if (!isSignedIn) return;
@@ -21,6 +30,7 @@ export const useToken = () => {
       const jwt = await getToken();
       if (jwt) {
         setState(prev => ({ ...prev, token: jwt }));
+        updateTimeRemaining(jwt);
       }
       
       if (user?.publicMetadata?.role) {
@@ -31,7 +41,7 @@ export const useToken = () => {
     } finally {
       setState(prev => ({ ...prev, isRefreshing: false }));
     }
-  }, [getToken, user, isSignedIn]);
+  }, [getToken, user, isSignedIn, updateTimeRemaining]);
 
   const copyToClipboard = useCallback(async () => {
     if (!state.token) return;
@@ -49,18 +59,31 @@ export const useToken = () => {
     if (isSignedIn) {
       fetchToken();
       const intervalId = setInterval(fetchToken, 60 * 1000);
-      return () => clearInterval(intervalId);
+      
+      // Actualizar el tiempo restante cada segundo
+      const timeIntervalId = setInterval(() => {
+        if (state.token) {
+          updateTimeRemaining(state.token);
+        }
+      }, 1000);
+      
+      return () => {
+        clearInterval(intervalId);
+        clearInterval(timeIntervalId);
+      };
     } else {
       setState({ token: null, isRefreshing: false, error: null, copied: false });
       setUserRole(null);
+      setTimeRemaining(null);
     }
-  }, [fetchToken, isSignedIn]);
+  }, [fetchToken, isSignedIn, state.token, updateTimeRemaining]);
 
   return {
     ...state,
     userRole,
     isSignedIn,
     user,
+    timeRemaining,
     fetchToken,
     copyToClipboard
   };

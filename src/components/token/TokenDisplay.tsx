@@ -1,9 +1,10 @@
-import { Check, Copy, RefreshCw } from 'lucide-react';
+import { Check, Copy, RefreshCw, Clock } from 'lucide-react';
 
 interface TokenDisplayProps {
   token: string | null;
   isRefreshing: boolean;
   copied: boolean;
+  timeRemaining: string | null;
   onRefresh: () => void;
   onCopy: () => void;
 }
@@ -12,6 +13,7 @@ export const TokenDisplay = ({
   token, 
   isRefreshing, 
   copied, 
+  timeRemaining,
   onRefresh, 
   onCopy 
 }: TokenDisplayProps) => (
@@ -49,6 +51,15 @@ export const TokenDisplay = ({
         )}
       </button>
     </div>
+    
+    {timeRemaining && (
+      <div className="flex items-center gap-2 mb-3 p-2 bg-blue-50 border border-blue-200 rounded">
+        <Clock size={16} className="text-blue-600" />
+        <span className="text-sm text-blue-800">
+          <strong>Tiempo restante:</strong> {timeRemaining}
+        </span>
+      </div>
+    )}
     
     {token ? (
       <div className="bg-gray-800 text-gray-200 p-4 rounded overflow-x-auto">

@@ -15,6 +15,7 @@ function TokenPage() {
     userRole,
     isSignedIn,
     user,
+    timeRemaining,
     fetchToken,
     copyToClipboard
   } = useToken();
@@ -41,6 +42,7 @@ function TokenPage() {
             token={token}
             isRefreshing={isRefreshing}
             copied={copied}
+            timeRemaining={timeRemaining}
             onRefresh={fetchToken}
             onCopy={copyToClipboard}
           />

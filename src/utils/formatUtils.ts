@@ -50,4 +50,48 @@ export const extractUnidad = (message: WebSocketMessage | null): string | null =
   if (data.unidad) return data.unidad;
   
   return null;
+};
+
+export const decodeJWT = (token: string) => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('Error decodificando JWT:', error);
+    return null;
+  }
+};
+
+export const getTokenExpirationTime = (token: string) => {
+  const decoded = decodeJWT(token);
+  if (!decoded || !decoded.exp) return null;
+  
+  const expirationTime = decoded.exp * 1000; // Convertir a milisegundos
+  const currentTime = Date.now();
+  const timeRemaining = expirationTime - currentTime;
+  
+  return timeRemaining > 0 ? timeRemaining : 0;
+};
+
+export const formatTimeRemaining = (milliseconds: number) => {
+  if (milliseconds <= 0) return 'Expirado';
+  
+  const seconds = Math.floor(milliseconds / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  
+  if (days > 0) {
+    return `${days} día${days > 1 ? 's' : ''} ${hours % 24}h ${minutes % 60}m`;
+  } else if (hours > 0) {
+    return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+  } else if (minutes > 0) {
+    return `${minutes}m ${seconds % 60}s`;
+  } else {
+    return `${seconds}s`;
+  }
 }; 
